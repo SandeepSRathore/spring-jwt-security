@@ -47,8 +47,12 @@ mvn spring-boot:run -Dspring-boot.run.profiles=curltest
 ```
 
 The database is H2 in-memory, so every restart starts clean. A bootstrap admin is created from
-`ADMIN_EMAIL` / `ADMIN_PASSWORD`, which default to `admin@example.com` / `Admin@12345`. Set
-`JWT_SECRET` to your own key (`openssl rand -base64 48`) for anything that isn't local testing.
+`ADMIN_EMAIL` / `ADMIN_PASSWORD`, which default to `admin@example.com` / `Admin@12345` (the
+frontend shows these on its sign-in page on purpose — this is a local test console).
+
+For any real deployment, set both `JWT_SECRET` (`openssl rand -base64 48`) and `ADMIN_PASSWORD`
+to your own values. The app logs a startup warning while the checked-in dev `JWT_SECRET` is in
+use, since anyone who has seen the repo could otherwise mint valid tokens with it.
 
 ## How it works
 
@@ -170,6 +174,14 @@ and the manual steps are also in the git history of this README.
   client IP is real; `X-Forwarded-For` is deliberately not trusted.
 - **Account enumeration.** `409 email_taken` on register and `423 account_locked` on login do
   reveal that an account exists. Login itself does not.
+- **Lock-out accounting is concurrency-safe.** Login and change-password read the user row with
+  a pessimistic lock (`findByEmailForUpdate` / `findByIdForUpdate`), so parallel wrong-password
+  attempts can't interleave and undercount toward lock-out. Across multiple instances the lock
+  still holds, because it lives in the shared database.
+- **Roles travel in the access token.** They are re-checked against the live session on every
+  request (so a disabled account is rejected at once), but a role *change* only takes effect
+  when the 15-minute access token is next refreshed. Re-read roles from the DB in
+  `AccessTokenValidator` if you need role changes to apply instantly.
 - **Not included (they need email delivery):** email verification, forgot-password / reset
   tokens, MFA.
 - Use a real database (Postgres) with Flyway in place of `ddl-auto`. Add a scheduled job to

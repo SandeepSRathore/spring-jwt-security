@@ -7,6 +7,8 @@ import java.util.List;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
@@ -26,8 +28,13 @@ import com.learning.jwtauth.config.AppProperties;
 @Configuration
 public class JwtConfig {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtConfig.class);
+
     /** RFC 9068 media type for access tokens; stops other JWTs signed with our key being replayed as one. */
     public static final String ACCESS_TOKEN_TYPE = "at+jwt";
+
+    /** The checked-in default from application.yml. Anyone can read it, so it signs nothing real. */
+    private static final String DEV_DEFAULT_SECRET = "ZGV2LW9ubHktc2VjcmV0LWNoYW5nZS1tZS1iZWZvcmUtZGVwbG95aW5nLTEyMzQ1Ng==";
 
     @Bean
     Clock clock() {
@@ -39,6 +46,11 @@ public class JwtConfig {
         byte[] bytes = Base64.getDecoder().decode(props.jwt().secret());
         if (bytes.length < 32) {
             throw new IllegalStateException("app.jwt.secret must decode to at least 32 bytes for HS256");
+        }
+        if (DEV_DEFAULT_SECRET.equals(props.jwt().secret())) {
+            // Loud on purpose: with this key, anyone who has seen the repo can mint valid tokens.
+            log.warn("SECURITY app.jwt.secret is the public dev default. Fine for local testing, NEVER for a "
+                    + "deployment. Set JWT_SECRET (e.g. `export JWT_SECRET=$(openssl rand -base64 48)`).");
         }
         return new SecretKeySpec(bytes, "HmacSHA256");
     }

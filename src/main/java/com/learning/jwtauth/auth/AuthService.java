@@ -89,7 +89,7 @@ public class AuthService {
     @Transactional(noRollbackFor = ApiException.class)
     public TokenResponse login(LoginRequest request, ClientInfo client) {
         Instant now = clock.instant();
-        User user = users.findByEmail(normalizeEmail(request.email())).orElse(null);
+        User user = users.findByEmailForUpdate(normalizeEmail(request.email())).orElse(null);
         if (user == null) {
             passwordEncoder.matches(request.password(), dummyPasswordHash);
             throw invalidCredentials();
@@ -189,7 +189,8 @@ public class AuthService {
     @Transactional(noRollbackFor = ApiException.class)
     public ChangePasswordResponse changePassword(Long userId, UUID currentSessionId, ChangePasswordRequest request) {
         Instant now = clock.instant();
-        User user = users.findById(userId).orElseThrow(() -> unauthorized(AuthErrorCodes.INVALID_TOKEN, "Unknown user"));
+        User user = users.findByIdForUpdate(userId)
+                .orElseThrow(() -> unauthorized(AuthErrorCodes.INVALID_TOKEN, "Unknown user"));
         if (user.isLockedAt(now)) {
             throw locked(user.getLockedUntil(), now);
         }
