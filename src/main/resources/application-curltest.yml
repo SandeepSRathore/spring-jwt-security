@@ -1,0 +1,14 @@
+# Short lifetimes so test-api.sh can observe expiry and lock-out without waiting minutes.
+# Start with: mvn spring-boot:run -Dspring-boot.run.profiles=curltest
+app:
+  jwt:
+    access-token-ttl: PT15S
+    clock-skew: PT0S
+  session:
+    refresh-token-ttl: PT40S
+    absolute-ttl: PT10M
+    max-active-per-user: 3
+  login:
+    max-failed-attempts: 3
+    lock-duration: PT30S
+    rate-limit-per-minute: 40
