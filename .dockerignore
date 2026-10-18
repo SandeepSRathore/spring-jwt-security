@@ -1,0 +1,14 @@
+# API build context (repo root). Keep it to what the Maven build needs.
+target/
+frontend/
+docs/
+.git/
+.github/
+.idea/
+*.iml
+*.log
+.env
+.DS_Store
+README.md
+test-api.sh
+docker-compose.yml

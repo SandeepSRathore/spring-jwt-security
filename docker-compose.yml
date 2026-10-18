@@ -1,0 +1,45 @@
+# Bring the whole stack up with:  docker compose up --build
+# Copy .env.example to .env and fill in the secrets first.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-authdb}
+      POSTGRES_USER: ${POSTGRES_USER:-authuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-authuser} -d ${POSTGRES_DB:-authdb}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  api:
+    build:
+      context: .
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-authdb}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-authuser}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env (openssl rand -base64 48)}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+    depends_on:
+      db:
+        condition: service_healthy
+    # Not published to the host: the browser only ever reaches it through the web container.
+    expose:
+      - "8080"
+
+  web:
+    build:
+      context: ./frontend
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      - api
+
+volumes:
+  db-data:

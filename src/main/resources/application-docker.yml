@@ -1,0 +1,19 @@
+# Activated with SPRING_PROFILES_ACTIVE=docker (set by docker-compose.yml).
+# Everything not overridden here is inherited from application.yml.
+spring:
+  datasource:
+    # All three come from the environment (see .env / docker-compose.yml). The defaults
+    # only apply if you run this profile by hand against a local Postgres.
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/authdb}
+    username: ${SPRING_DATASOURCE_USERNAME:authuser}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  jpa:
+    hibernate:
+      # update (not create-drop) so data survives container restarts. For a real deployment
+      # switch to versioned migrations (Flyway); see the README.
+      ddl-auto: update
+
+server:
+  # Behind nginx: let Tomcat honour X-Forwarded-* so getRemoteAddr() reflects the real client,
+  # which the per-IP login rate limiter depends on. nginx sets these headers (see nginx.conf).
+  forward-headers-strategy: native

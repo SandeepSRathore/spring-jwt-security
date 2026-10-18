@@ -4,3 +4,6 @@ target/
 *.iml
 .vscode/
 .DS_Store
+
+# Docker: real secrets live here, only .env.example is committed
+.env

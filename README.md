@@ -28,6 +28,33 @@ The UI calls the API through a dev proxy, so no CORS setup is needed.
 To watch tokens expire in seconds rather than minutes, start the API with the short-lifetime
 profile: `mvn spring-boot:run -Dspring-boot.run.profiles=curltest`.
 
+## Run with Docker
+
+`docker compose up` builds three services — the API, the nginx-served UI, and PostgreSQL — and
+wires them together. The browser only talks to the UI container, which proxies `/api` to the
+API, so there's no CORS to configure; the database lives in a named volume and survives
+restarts.
+
+```bash
+cp .env.example .env
+# edit .env and set JWT_SECRET, ADMIN_PASSWORD, POSTGRES_PASSWORD
+#   a good JWT secret:  openssl rand -base64 48
+docker compose up --build
+```
+
+Then open <http://localhost:8080> and sign in with the admin from your `.env`.
+
+- The API runs with the `docker` Spring profile: PostgreSQL instead of H2, schema managed by
+  Hibernate `ddl-auto: update` so data persists across restarts. All secrets come from `.env`,
+  never baked into the image.
+- Only the UI port is published (`WEB_PORT`, default 8080). The API (`8080`) and database
+  (`5432`) are reachable only inside the compose network.
+- Stop with `docker compose down`; add `-v` to also drop the database volume and start clean.
+
+This is a convenient local/demo stack, not a production topology: single node, `ddl-auto`
+instead of versioned migrations, HTTP only. For production you'd add Flyway, TLS termination,
+and a managed database.
+
 ## Screens
 
 The right-hand panel decodes the live access token (its three segments colour-coded), counts
