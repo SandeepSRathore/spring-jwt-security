@@ -28,6 +28,23 @@ The UI calls the API through a dev proxy, so no CORS setup is needed.
 To watch tokens expire in seconds rather than minutes, start the API with the short-lifetime
 profile: `mvn spring-boot:run -Dspring-boot.run.profiles=curltest`.
 
+## Screens
+
+The right-hand panel decodes the live access token (its three segments colour-coded), counts
+down to expiry, and logs every API call the app makes.
+
+**Account** — profile from `GET /api/users/me`, on-demand token refresh, and change password:
+
+![Account page](docs/screenshots/01-account.jpg)
+
+**Devices** — one row per active session; revoke one or sign out everywhere:
+
+![Devices page](docs/screenshots/02-devices.jpg)
+
+**Users** (admin only) — disable, enable or unlock any account:
+
+![Users page](docs/screenshots/03-users.jpg)
+
 ---
 
 # Backend
